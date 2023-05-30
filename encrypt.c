@@ -5,9 +5,16 @@
 #include <openssl/des.h>
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include <openssl/err.h>
 
 #define AES_BLOCK_SIZE 16
 #define DES_BLOCK_SIZE 8
+
+void handleOpenSSLErrors()
+{
+    ERR_print_errors_fp(stderr);
+    exit(1);
+}
 
 void encryptFileAES(const char* inputFile, const char* outputFile, const unsigned char* key) {
     FILE *inFile, *outFile;
@@ -136,8 +143,7 @@ void encryptFileRSA(const char* inputFile, const char* outputFile, RSA* rsaKey) 
     while ((bytesRead = fread(inBuffer, 1, RSA_size(rsaKey) - 11, inFile)) > 0) {
         int encryptedBytes = RSA_public_encrypt(bytesRead, inBuffer, outBuffer, rsaKey, RSA_PKCS1_PADDING);
         if (encryptedBytes == -1) {
-            fprintf(stderr, "Encryption error\n");
-            exit(1);
+            handleOpenSSLErrors();
         }
         fwrite(outBuffer, 1, encryptedBytes, outFile);
     }
@@ -162,8 +168,7 @@ void decryptFileRSA(const char* inputFile, const char* outputFile, RSA* rsaKey) 
     while ((bytesRead = fread(inBuffer, 1, RSA_size(rsaKey), inFile)) > 0) {
         int decryptedBytes = RSA_private_decrypt(bytesRead, inBuffer, outBuffer, rsaKey, RSA_PKCS1_PADDING);
         if (decryptedBytes == -1) {
-            fprintf(stderr, "Decryption error\n");
-            exit(1);
+            handleOpenSSLErrors();
         }
         fwrite(outBuffer, 1, decryptedBytes, outFile);
     }
@@ -204,16 +209,21 @@ int main() {
     printf("File decrypted using DES: %s\n", decryptedDESFile);
 
     // Load RSA keys from files
-    FILE* privateKeyFile = fopen(rsaPrivateKeyFile, "r");
-    FILE* publicKeyFile = fopen(rsaPublicKeyFile, "r");
-    if (privateKeyFile == NULL || publicKeyFile == NULL) {
-        perror("Error opening RSA key files");
+    FILE* privateKeyFile = fopen("private_key.pem", "r");
+    if (privateKeyFile == NULL) {
+        perror("Error opening private key file");
         exit(1);
     }
     RSA* rsaPrivateKey = PEM_read_RSAPrivateKey(privateKeyFile, NULL, NULL, NULL);
-    RSA* rsaPublicKey = PEM_read_RSAPublicKey(publicKeyFile, NULL, NULL, NULL);
+    if (rsaPrivateKey == NULL) {
+        handleOpenSSLErrors();
+    }
     fclose(privateKeyFile);
-    fclose(publicKeyFile);
+
+    RSA* rsaPublicKey = RSAPublicKey_dup(rsaPrivateKey);
+    if (rsaPublicKey == NULL) {
+        handleOpenSSLErrors();
+    }
 
     // Encrypt using RSA
     encryptFileRSA(inputFile, encryptedRSAFile, rsaPublicKey);
