@@ -41,16 +41,16 @@ The program provides support for AES, DES, and RSA encryption algorithms. You ca
 
 1. Generate an RSA key pair or use existing RSA key pair files (`private_key.pem` and `public_key.pem`).
 
-To generate an RSA key pair, you can use the OpenSSL CLI:
+   To generate an RSA key pair, you can use the OpenSSL CLI:
 
-Open a terminal or command prompt.
-Run the following command to generate a private key:
-openssl genpkey -algorithm RSA -out `private_key.pem`
+   Open a terminal or command prompt.
+   Run the following command to generate a private key:
+   openssl genpkey -algorithm RSA -out `private_key.pem`
 
-Run the following command to generate the corresponding public key:
-
-openssl rsa -pubout -in `private_key.pem` -out `public_key.pem`
-This command extracts the public key from the private key and saves it in the file `public_key.pem`.
+   Run the following command to generate the corresponding public key:
+   openssl rsa -pubout -in `private_key.pem` -out `public_key.pem`
+   
+   This command extracts the public key from the private key and saves it in the file `public_key.pem`.
 
 2. Update the `rsaPrivateKeyFile` and `rsaPublicKeyFile` variables in the code with the paths to your RSA key pair files.
 
