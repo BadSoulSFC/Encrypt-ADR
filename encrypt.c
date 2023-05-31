@@ -1,3 +1,4 @@
+#include "argparse.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -177,65 +178,103 @@ void decryptFileRSA(const char* inputFile, const char* outputFile, RSA* rsaKey) 
     fclose(outFile);
 }
 
-// #TODO: GUI/CLI
 
-int main() {
-    const unsigned char aesKey[] = "myaesencryptionkey";
-    const unsigned char desKey[] = "mydeskey";
-    const char* rsaPrivateKeyFile = "private_key.pem";
-    const char* rsaPublicKeyFile = "public_key.pem";
-    const char* inputFile = "input.txt";
-    const char* encryptedAESFile = "encrypted_aes.bin";
-    const char* decryptedAESFile = "decrypted_aes.txt";
-    const char* encryptedDESFile = "encrypted_des.bin";
-    const char* decryptedDESFile = "decrypted_des.txt";
-    const char* encryptedRSAFile = "encrypted_rsa.bin";
-    const char* decryptedRSAFile = "decrypted_rsa.txt";
 
-    // Encrypt using AES
-    encryptFileAES(inputFile, encryptedAESFile, aesKey);
-    printf("File encrypted using AES: %s\n", encryptedAESFile);
+int main(int argc, const char** argv)
+{
+    const char *inputFile = NULL;
+    const char *outputFile = NULL;
+    const char *key = NULL;
+    const char *algorithm = NULL;
+    int decryptFlag = 0;
 
-    // Decrypt using AES
-    decryptFileAES(encryptedAESFile, decryptedAESFile, aesKey);
-    printf("File decrypted using AES: %s\n", decryptedAESFile);
+    struct argparse_option options[] = {
+        OPT_HELP(),
+        OPT_STRING('i', "input", &inputFile, "Input file"),
+        OPT_STRING('o', "output", &outputFile, "Output file"),
+        OPT_STRING('k', "key", &key, "Encryption key"),
+        OPT_STRING('a', "algorithm", &algorithm, "Encryption algorithm (aes, des, rsa)"),
+        OPT_BOOLEAN('d', "decrypt", &decryptFlag, "Perform decryption"),
+        OPT_END()
+    };
 
-    // Encrypt using DES
-    encryptFileDES(inputFile, encryptedDESFile, desKey);
-    printf("File encrypted using DES: %s\n", encryptedDESFile);
+    struct argparse argparse;
+    argparse_init(&argparse, options, NULL, 0);
+    argparse_describe(&argparse, "\nFile Encryption Program", "\nEncrypt and decrypt files using AES, DES, or RSA algorithms.");
 
-    // Decrypt using DES
-    decryptFileDES(encryptedDESFile, decryptedDESFile, desKey);
-    printf("File decrypted using DES: %s\n", decryptedDESFile);
+    argc = argparse_parse(&argparse, argc, argv);
 
-    // Load RSA keys from files
-    FILE* privateKeyFile = fopen("private_key.pem", "r");
-    if (privateKeyFile == NULL) {
-        perror("Error opening private key file");
-        exit(1);
-    }
-    RSA* rsaPrivateKey = PEM_read_RSAPrivateKey(privateKeyFile, NULL, NULL, NULL);
-    if (rsaPrivateKey == NULL) {
-        handleOpenSSLErrors();
-    }
-    fclose(privateKeyFile);
-
-    RSA* rsaPublicKey = RSAPublicKey_dup(rsaPrivateKey);
-    if (rsaPublicKey == NULL) {
-        handleOpenSSLErrors();
+    if (inputFile == NULL || outputFile == NULL || key == NULL || algorithm == NULL) {
+        printf("Input file, output file, encryption key, and algorithm are required.\n");
+        argparse_usage(&argparse);
+        return 1;
     }
 
-    // Encrypt using RSA
-    encryptFileRSA(inputFile, encryptedRSAFile, rsaPublicKey);
-    printf("File encrypted using RSA: %s\n", encryptedRSAFile);
+    // Perform file encryption or decryption based on the user's arguments
 
-    // Decrypt using RSA
-    decryptFileRSA(encryptedRSAFile, decryptedRSAFile, rsaPrivateKey);
-    printf("File decrypted using RSA: %s\n", decryptedRSAFile);
+    if (strcmp(algorithm, "aes") == 0) {
+        // AES key
+        unsigned char aesKey[AES_BLOCK_SIZE];
+        strncpy(aesKey, key, AES_BLOCK_SIZE);
 
-    // Cleanup RSA keys
-    RSA_free(rsaPrivateKey);
-    RSA_free(rsaPublicKey);
+        if (decryptFlag) {
+            // Decrypt using AES
+            decryptFileAES(inputFile, outputFile, aesKey);
+            printf("File decrypted using AES: %s\n", outputFile);
+        } else {
+            // Encrypt using AES
+            encryptFileAES(inputFile, outputFile, aesKey);
+            printf("File encrypted using AES: %s\n", outputFile);
+        }
+    } else if (strcmp(algorithm, "des") == 0) {
+        // DES key
+        unsigned char desKey[DES_BLOCK_SIZE];
+        strncpy(desKey, key, DES_BLOCK_SIZE);
+
+        if (decryptFlag) {
+            // Decrypt using DES
+            decryptFileDES(inputFile, outputFile, desKey);
+            printf("File decrypted using DES: %s\n", outputFile);
+        } else {
+            // Encrypt using DES
+            encryptFileDES(inputFile, outputFile, desKey);
+            printf("File encrypted using DES: %s\n", outputFile);
+        }
+    } else if (strcmp(algorithm, "rsa") == 0) {
+        // Load RSA keys from files
+        FILE* privateKeyFile = fopen("private_key.pem", "r");
+        if (privateKeyFile == NULL) {
+            perror("Error opening private key file");
+            exit(1);
+        }
+        RSA* rsaPrivateKey = PEM_read_RSAPrivateKey(privateKeyFile, NULL, NULL, NULL);
+        if (rsaPrivateKey == NULL) {
+            handleOpenSSLErrors();
+        }
+        fclose(privateKeyFile);
+
+        RSA* rsaPublicKey = RSAPublicKey_dup(rsaPrivateKey);
+        if (rsaPublicKey == NULL) {
+            handleOpenSSLErrors();
+        }
+
+        if (decryptFlag) {
+            // Decrypt using RSA
+            decryptFileRSA(inputFile, outputFile, rsaPrivateKey);
+            printf("File decrypted using RSA: %s\n", outputFile);
+        } else {
+            // Encrypt using RSA
+            encryptFileRSA(inputFile, outputFile, rsaPublicKey);
+            printf("File encrypted using RSA: %s\n", outputFile);
+        }
+
+        // Cleanup RSA keys
+        RSA_free(rsaPrivateKey);
+        RSA_free(rsaPublicKey);
+    } else {
+        printf("Invalid encryption algorithm. Supported algorithms are: aes, des, rsa.\n");
+        return 1;
+    }
 
     return 0;
 }

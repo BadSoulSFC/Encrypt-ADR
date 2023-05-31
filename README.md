@@ -1,64 +1,47 @@
-# Encrypt-ADR AES-DES-RSA
-
+Encrypt-ADR AES-DES-RSA
 This is an encryption program written in C that demonstrates various encryption algorithms such as AES, DES, and RSA. The program allows you to encrypt and decrypt files using these algorithms.
-
 
 To compile and run the program, you need to have the OpenSSL library installed.
 
-1. Make sure you have the necessary input file(s) ready. For encryption, you'll need the file(s) you want to encrypt. For decryption, you'll need the encrypted file(s) and the correct encryption key(s).
+Make sure you have the necessary input file(s) ready. For encryption, you'll need the file(s) you want to encrypt. For decryption, you'll need the encrypted file(s) and the correct encryption key(s).
 
-2. Compile the program using the following command:
-gcc -o file_encryptor file_encryptor.c -lcrypto
+Compile the program using the following command: gcc -o encrypt encrypt.c -lcrypto
 
-3. Run the program by executing the generated executable file:
-./file_encryptor
+Run the program by executing the generated executable file: ./encrypt
 
-# Usage
+#Usage
+The program provides support for AES, DES, and RSA encryption algorithms. You can use the following command-line options to specify the input file, output file, encryption key, encryption algorithm, and whether to perform encryption or decryption:
 
-The program provides support for AES, DES, and RSA encryption algorithms. You can follow the steps below to encrypt and decrypt files using each algorithm:
+- `-i` or `--input`: Specify the input file.
+- `-o` or `--output`: Specify the output file.
+- `-k` or `--key`: Specify the encryption key.
+- `-a` or `--algorithm`: Specify the encryption algorithm (aes, des, rsa).
+- `-d` or `--decrypt`: Perform decryption (optional).
 
-# AES Encryption and Decryption
+#Examples:
+1. Encrypt using AES: ./encrypt -i input.txt -o output.bin -k aeskey -a aes
+   This will encrypt the input.txt file using AES and store the encrypted output in output.bin.
 
-1. Update the `aesKey` variable in the code with your desired encryption key.
+2. Decrypt using AES: ./encrypt -i encrypted.bin -o decrypted.txt -k aeskey -a aes -d
+   This will decrypt the encrypted.bin file using AES and store the decrypted output in decrypted.txt.
 
-2. Place the file you want to encrypt in the same directory as the executable and name it `input.txt`.
+3. Encrypt using DES: ./encrypt -i input.txt -o output.bin -k deskey -a des
+   This will encrypt the input.txt file using DES and store the encrypted output in output.bin.
 
-3. Run the program. It will encrypt the `input.txt` file using AES and generate an encrypted file named `encrypted_aes.bin`.
+4. Decrypt using DES: ./encrypt -i encrypted.bin -o decrypted.txt -k deskey -a des -d
+   This will decrypt the encrypted.bin file using DES and store the decrypted output in decrypted.txt.
 
-4. To decrypt the file, run the program again. It will decrypt the `encrypted_aes.bin` file and generate a decrypted file named `decrypted_aes.txt`.
+5. Encrypt using RSA: ./encrypt -i input.txt -o output.bin -k private_key.pem -a rsa
+   This will encrypt the input.txt file using RSA and store the encrypted output in output.bin.
 
-### DES Encryption and Decryption
+6. Decrypt using RSA: ./encrypt -i encrypted.bin -o decrypted.txt -k private_key.pem -a rsa -d
+   This will decrypt the encrypted.bin file using RSA and store the decrypted output in decrypted.txt.
 
-1. Update the `desKey` variable in the code with your desired encryption key.
+#Note: For RSA encryption and decryption, you need to generate or provide an RSA key pair in PEM format. Use the OpenSSL CLI to generate a key pair:
 
-2. Place the file you want to encrypt in the same directory as the executable and name it `input.txt`.
+- Generate a private key: openssl genpkey -algorithm RSA -out private_key.pem
+- Generate a public key: openssl rsa -pubout -in private_key.pem -out public_key.pem
 
-3. Run the program. It will encrypt the `input.txt` file using DES and generate an encrypted file named `encrypted_des.bin`.
+Ensure that the private_key.pem and public_key.pem files are in the same directory as the executable file.
 
-4. To decrypt the file, run the program again. It will decrypt the `encrypted_des.bin` file and generate a decrypted file named `decrypted_des.txt`.
-
-# RSA Encryption and Decryption
-
-1. Generate an RSA key pair or use existing RSA key pair files (`private_key.pem` and `public_key.pem`).
-
-   To generate an RSA key pair, you can use the OpenSSL CLI:
-
-   Open a terminal or command prompt.
-   Run the following command to generate a private key:
-   openssl genpkey -algorithm RSA -out `private_key.pem`
-
-   Run the following command to generate the corresponding public key:
-   openssl rsa -pubout -in `private_key.pem` -out `public_key.pem`
-   
-   This command extracts the public key from the private key and saves it in the file `public_key.pem`.
-
-2. Update the `rsaPrivateKeyFile` and `rsaPublicKeyFile` variables in the code with the paths to your RSA key pair files.
-
-3. Place the file you want to encrypt in the same directory as the executable and name it `input.txt`.
-
-4. Run the program. It will encrypt the `input.txt` file using RSA and generate an encrypted file named `encrypted_rsa.bin`.
-
-5. To decrypt the file, run the program again. It will decrypt the `encrypted_rsa.bin` file and generate a decrypted file named `decrypted_rsa.txt`.
-
-
-
+Make sure to replace "aeskey", "deskey", and "private_key.pem" with your own encryption keys or key file paths.
