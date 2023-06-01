@@ -21,7 +21,7 @@ void handleOpenSSLErrors()
 }
 
 // Base64 encoding
-char* base64_encode(const unsigned char* input, size_t length) {
+char* base64_encode(const unsigned char* input, size_t length, size_t* output_length) {
     BIO* b64_bio = BIO_new(BIO_f_base64());
     BIO* mem_bio = BIO_new(BIO_s_mem());
     BIO_push(b64_bio, mem_bio);
@@ -37,19 +37,21 @@ char* base64_encode(const unsigned char* input, size_t length) {
     memcpy(encoded_data, mem_buf->data, mem_buf->length - 1);
     encoded_data[mem_buf->length - 1] = '\0';
 
+    *output_length = mem_buf->length;
+
     BIO_free_all(b64_bio);
 
     return encoded_data;
 }
 
 // Base64 decoding
-unsigned char* base64_decode(const char* input, size_t length) {
+unsigned char* base64_decode(const char* input, size_t length, size_t* output_length) {
     BIO* b64_bio = BIO_new(BIO_f_base64());
     BIO* mem_bio = BIO_new_mem_buf(input, length);
     BIO_push(b64_bio, mem_bio);
 
     unsigned char* decoded_data = (unsigned char*)malloc(length);
-    BIO_read(b64_bio, decoded_data, length);
+    *output_length = BIO_read(b64_bio, decoded_data, length);
 
     BIO_free_all(b64_bio);
 
@@ -86,7 +88,7 @@ void encryptFileAES(const char* inputFile, const char* outputFile, const unsigne
 }
 
 void encryptFileAESBASE64(const char* inputFile, const char* outputFile, const unsigned char* key) {
-    FILE *inFile, *outFile;
+    FILE* inFile, * outFile;
     unsigned char inBuffer[AES_BLOCK_SIZE];
     unsigned char outBuffer[AES_BLOCK_SIZE];
     AES_KEY aesKey;
@@ -107,14 +109,9 @@ void encryptFileAESBASE64(const char* inputFile, const char* outputFile, const u
             memset(inBuffer + bytesRead, padding, padding);
         }
         AES_encrypt(inBuffer, outBuffer, &aesKey);
-
-        // Converting the encrypted data to Base64
-        char* encoded_data = base64_encode(outBuffer, AES_BLOCK_SIZE);
-
-        // Writing the encoded data to the output file
-        fwrite(encoded_data, 1, strlen(encoded_data), outFile);
-
-        // Clean up
+        size_t encoded_length;
+        char* encoded_data = base64_encode(outBuffer, AES_BLOCK_SIZE, &encoded_length);
+        fwrite(encoded_data, 1, encoded_length, outFile);
         free(encoded_data);
     }
 
